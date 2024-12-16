@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Idoltalk</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <nav>
+        <div class="logo">IDOLTALK</div>
+        <div class="user-info">
+            <button>Log Out</button>
+            <img src="user.png">
+            <span>Hello User</span>
+        </div>
+    </nav>
+    <div class="container">
+        <aside>
+            <div class="button-container">
+                <ul>
+                    <li><button>Create Topic</button></li>
+                    <li><button>Friend</button></li>
+                    <li><button>Group</button></li>
+                    <li><button>Ticket Box</button></li>
+                    <li> <button>Add Event</button></li>
+                </ul>
+            </div>
+        </aside>
+        <main>
+            <div class="user-post">
+                <div class="user-info">
+                    <img src="user.png">
+                    <div class="post-input">
+                        <input type="text" placeholder="What's on your mind?">
+                        <div class="post-actions">
+                            <button class="post-btn">Post</button>
+                            <button class="delete-btn">Delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="posts-container" class="posts-container">
+
+            </div>
+        </main>
+        <div class="event-sidebar">
+            <div class="event-update">
+                <h3>Event Update</h3>
+            </div>
+        </div>
+    </div>
+    <script src="client.js"></script>
+</body>
+
+</html>
