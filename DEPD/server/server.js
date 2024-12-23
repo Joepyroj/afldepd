@@ -9,8 +9,8 @@ app.use(express.static(path.join(__dirname, '../public')));
 // MySQL Connection Pool
 const pool = mysql.createPool({
     host: 'localhost',
-    user: 'your_username', // Replace with your MySQL username
-    password: 'your_password', // Replace with your MySQL password
+    user: 'root',
+    password: 'C0nstruks1',
     database: 'idoltalk',
     waitForConnections: true,
     connectionLimit: 10,

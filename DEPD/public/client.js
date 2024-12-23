@@ -1,175 +1,210 @@
-let currentUser = 'User'; // Nanti bisa diganti dengan sistem login yang sebenarnya
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('commentForm');
+    const commentsContainer = document.getElementById('commentsContainer');
+    const commentInput = document.getElementById('commentInput');
+    const overlay = document.getElementById('overlay');
+    const deleteConfirm = document.getElementById('deleteConfirm');
+    let commentToDelete = null;
 
-async function createPost() {
-    const postContent = document.getElementById('post-content');
-    const content = postContent.value.trim();
-
-    if (content === '') return;
-
-    try {
-        const response = await fetch('/posts', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                content: content,
-                author: currentUser
-            })
-        });
-
-        const newPost = await response.json();
-        displayPost(newPost);
-        postContent.value = ''; // Bersihkan input
-    } catch (error) {
-        console.error('Error creating post:', error);
+    // Function to create a unique ID for each comment
+    function generateCommentId() {
+        return 'comment-' + Date.now();
     }
-}
 
-function clearInput() {
-    document.getElementById('post-content').value = '';
-}
+    // Function to create the edit form
+    function createEditForm(commentId, currentText) {
+        const editForm = document.createElement('form');
+        editForm.className = 'edit-form';
+        editForm.id = `edit-form-${commentId}`;
+        editForm.innerHTML = `
+            <textarea required>${currentText}</textarea>
+            <div class="edit-form-buttons">
+                <button type="submit">Save</button>
+                <button type="button" onclick="cancelEdit('${commentId}')">Cancel</button>
+            </div>
+        `;
+        return editForm;
+    }
 
-async function loadPosts() {
-    try {
-        const response = await fetch('/posts', {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json'
+    // Function to create reply form
+    function createReplyForm(parentId) {
+        const replyForm = document.createElement('form');
+        replyForm.className = 'reply-form';
+        replyForm.id = `reply-form-${parentId}`;
+        replyForm.innerHTML = `
+            <div class="reply-form-content">
+                <div class="reply-input-wrapper">
+                    <div class="comment-avatar">
+                        <img src="/api/placeholder/50/50">
+                    </div>
+                    <textarea required placeholder="Write a reply..."></textarea>
+                </div>
+                <div class="reply-form-buttons">
+                    <button type="submit">Reply</button>
+                    <button type="button" class="cancel-reply">Cancel</button>
+                </div>
+            </div>
+        `;
+        return replyForm;
+    }
+
+    // Function to handle reply action
+    window.replyToComment = function (commentId) {
+        // Remove any existing reply forms
+        const existingForms = document.querySelectorAll('.reply-form');
+        existingForms.forEach(form => form.remove());
+
+        const comment = document.getElementById(commentId);
+        const replyForm = createReplyForm(commentId);
+
+        // Create or get replies container
+        let repliesContainer = comment.querySelector('.replies');
+        if (!repliesContainer) {
+            repliesContainer = document.createElement('div');
+            repliesContainer.className = 'replies';
+            comment.appendChild(repliesContainer);
+        }
+
+        // Insert reply form at the beginning of replies container
+        repliesContainer.insertBefore(replyForm, repliesContainer.firstChild);
+
+        // Handle reply form submission
+        replyForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const replyText = this.querySelector('textarea').value.trim();
+
+            if (replyText) {
+                const replyId = generateCommentId();
+                const newReply = document.createElement('div');
+                newReply.className = 'comment reply';
+                newReply.id = replyId;
+
+                newReply.innerHTML = `
+                    <div class="comment-avatar">
+                        <img src="/api/placeholder/50/50">
+                    </div>
+                    <div class="comment-box">
+                        <div class="comment-text">
+                            ${replyText}
+                        </div>
+                        <div class="comment-footer">
+                            <div class="comment-info">
+                                <span class="comment-date">
+                                    ${new Date().toLocaleString()}
+                                </span>
+                            </div>
+                            <div class="comment-actions">
+                                <a onclick="editComment('${replyId}')">Edit</a>
+                                <a onclick="deleteComment('${replyId}')">Delete</a>
+                                <a onclick="replyToComment('${replyId}')">Reply</a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                repliesContainer.appendChild(newReply);
+                replyForm.remove();
             }
         });
 
-        if (!response.ok) {
-            console.error('Response not OK:', response.status, response.statusText);
-            throw new Error('Network response was not ok');
+        // Handle cancel button
+        replyForm.querySelector('.cancel-reply').addEventListener('click', function () {
+            replyForm.remove();
+        });
+    };
+
+    // Function to handle edit action
+    window.editComment = function (commentId) {
+        const comment = document.getElementById(commentId);
+        const commentText = comment.querySelector('.comment-text');
+        const currentText = commentText.textContent.trim();
+        const editForm = createEditForm(commentId, currentText);
+
+        commentText.style.display = 'none';
+        comment.querySelector('.comment-box').insertBefore(editForm, commentText);
+        editForm.style.display = 'block';
+
+        editForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const newText = editForm.querySelector('textarea').value.trim();
+            if (newText) {
+                commentText.textContent = newText;
+                commentText.style.display = 'block';
+                editForm.remove();
+            }
+        });
+    };
+
+    // Function to cancel edit
+    window.cancelEdit = function (commentId) {
+        const comment = document.getElementById(commentId);
+        const editForm = comment.querySelector('.edit-form');
+        const commentText = comment.querySelector('.comment-text');
+
+        editForm.remove();
+        commentText.style.display = 'block';
+    };
+
+    // Function to show delete confirmation
+    window.deleteComment = function (commentId) {
+        commentToDelete = document.getElementById(commentId);
+        overlay.style.display = 'block';
+        deleteConfirm.style.display = 'block';
+    };
+
+    // Handle delete confirmation
+    document.getElementById('confirmDelete').addEventListener('click', function () {
+        if (commentToDelete) {
+            commentToDelete.remove();
+            commentToDelete = null;
         }
+        overlay.style.display = 'none';
+        deleteConfirm.style.display = 'none';
+    });
 
-        const posts = await response.json();
-        console.log('Fetched posts:', posts);
+    // Handle delete cancellation
+    document.getElementById('cancelDelete').addEventListener('click', function () {
+        commentToDelete = null;
+        overlay.style.display = 'none';
+        deleteConfirm.style.display = 'none';
+    });
 
-        const postsContainer = document.getElementById('posts-container');
-        postsContainer.innerHTML = ''; // Clear previous posts
+    // Add submit event listener to the form
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const commentText = commentInput.value;
 
-        posts.forEach(displayPost);
-    } catch (error) {
-        console.error('Error loading posts:', error);
-    }
-}
+        if (commentText.trim()) {
+            const commentId = generateCommentId();
+            const newComment = document.createElement('div');
+            newComment.className = 'comment';
+            newComment.id = commentId;
 
-function displayPost(post) {
-    const postsContainer = document.getElementById('posts-container');
-    const postElement = document.createElement('div');
-    postElement.classList.add('post');
-    postElement.dataset.postId = post._id;
-
-    postElement.innerHTML = `
-        <div class="post-header">
-            <img src="user.png" alt="User">
-            <span class="author">${post.author}</span>
-            <button class="delete-post-btn" onclick="deletePost('${post._id}')">Delete</button>
-        </div>
-        <div class="post-content">${post.content}</div>
-        <div class="replies-container">
-            ${post.replies.map(reply => `
-                <div class="reply">
-                    <img src="user.png" alt="User">
-                    <span class="reply-author">${reply.author}</span>
-                    <span class="reply-content">${reply.content}</span>
+            newComment.innerHTML = `
+                <div class="comment-avatar">
+                    <img src="/api/placeholder/50/50">
                 </div>
-            `).join('')}
-        </div>
-        <div class="reply-input">
-            <input type="text" placeholder="Reply to this post" class="reply-text">
-            <button onclick="addReply('${post._id}')">Reply</button>
-        </div>
-    `;
+                <div class="comment-box">
+                    <div class="comment-text">
+                        ${commentText}
+                    </div>
+                    <div class="comment-footer">
+                        <div class="comment-info">
+                            <span class="comment-date">
+                                ${new Date().toLocaleString()}
+                            </span>
+                        </div>
+                        <div class="comment-actions">
+                            <a onclick="editComment('${commentId}')">Edit</a>
+                            <a onclick="deleteComment('${commentId}')">Delete</a>
+                            <a onclick="replyToComment('${commentId}')">Reply</a>
+                        </div>
+                    </div>
+                </div>
+            `;
 
-    postsContainer.prepend(postElement);
-}
-
-async function addReply(postId) {
-    const replyInput = document.querySelector(`.post[data-post-id="${postId}"] .reply-text`);
-    const replyContent = replyInput.value.trim();
-
-    if (replyContent === '') return;
-
-    try {
-        const response = await fetch(`/posts/${postId}/reply`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                content: replyContent,
-                author: currentUser
-            })
-        });
-
-        const updatedPost = await response.json();
-        updatePostReplies(updatedPost);
-        replyInput.value = ''; // Bersihkan input
-    } catch (error) {
-        console.error('Error adding reply:', error);
-    }
-}
-
-function updatePostReplies(post) {
-    const postElement = document.querySelector(`.post[data-post-id="${post._id}"] .replies-container`);
-    postElement.innerHTML = post.replies.map(reply => `
-        <div class="reply">
-            <img src="user.png" alt="User">
-            <span class="reply-author">${reply.author}</span>
-            <span class="reply-content">${reply.content}</span>
-        </div>
-    `).join('');
-}
-
-async function deletePost(postId) {
-    try {
-        await fetch(`/posts/${postId}`, { method: 'DELETE' });
-        const postElement = document.querySelector(`.post[data-post-id="${postId}"]`);
-        postElement.remove();
-    } catch (error) {
-        console.error('Error deleting post:', error);
-    }
-}
-
-// Event listeners for buttons in index.html
-document.addEventListener('DOMContentLoaded', () => {
-    // Load posts when page loads
-    loadPosts();
-
-    // Add event listener for post button
-    const postBtn = document.querySelector('.post-btn');
-    const postInput = document.querySelector('.post-input input');
-
-    if (postBtn && postInput) {
-        postBtn.addEventListener('click', () => {
-            console.log('Post button clicked'); // Debug: Pastikan event listener bekerja
-            document.getElementById('post-content').value = postInput.value;
-            createPost();
-        });
-
-        // Add delete button functionality
-        const deleteBtn = document.querySelector('.delete-btn');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', clearInput);
+            commentsContainer.appendChild(newComment);
+            commentInput.value = '';
         }
-    } else {
-        console.error('Post button or input not found');
-    }
+    });
 });
-
-function createPost() {
-    const postContent = document.getElementById('post-content');
-    const content = postContent.value.trim();
-
-    console.log('Creating post with content:', content); // Debug: Cek isi konten
-
-    if (content === '') {
-        console.log('Empty content, not posting');
-        return;
-    }
-
-    // ... rest of the existing createPost function
-}

@@ -28,21 +28,29 @@
             </div>
         </aside>
         <main>
-            <div class="user-post">
-                <div class="user-info">
-                    <img src="user.png">
-                    <div class="post-input">
-                        <input type="text" placeholder="What's on your mind?">
-                        <div class="post-actions">
-                            <button class="post-btn">Post</button>
-                            <button class="delete-btn">Delete</button>
-                        </div>
+            <div class="comments-app">
+                <div class="comment-form">
+                    <div class="comment-avatar">
+                        <img src="/api/placeholder/50/50">
                     </div>
+
+                    <form class="form" id="commentForm">
+                        <div class="form-row">
+                            <textarea class="input" id="commentInput" placeholder="Add Topic..." required></textarea>
+                        </div>
+                        <div class="form-row">
+                            <input type="submit" value="Add Topic">
+                        </div>
+                    </form>
+                </div>
+
+                <div class="comments" id="commentsContainer">
+                    <!-- Comments will be added here -->
                 </div>
             </div>
-            <div id="posts-container" class="posts-container">
 
-            </div>
+
+
         </main>
         <div class="event-sidebar">
             <div class="event-update">
@@ -50,6 +58,16 @@
             </div>
         </div>
     </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="confirm-dialog" id="deleteConfirm">
+        <p>Delete this comment?</p>
+        <div class="confirm-dialog-buttons">
+            <button id="cancelDelete">Cancel</button>
+            <button id="confirmDelete">Delete</button>
+        </div>
+    </div>
+
     <script src="client.js"></script>
 </body>
 
